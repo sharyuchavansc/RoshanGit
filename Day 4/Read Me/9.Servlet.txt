@@ -1,0 +1,360 @@
++ Deployment descriptor:
+	- "web.xml" file is called deployment descriptor.
+	- It contains deployment instructions for the servlet container.
+	- There is only one web.xml file per web application.
+	- Developer is responsible for defining web.xml.
+	- It is always kept inside WEB-INF directory.
+	- Web container/Servlet container read "web.xml" file during 		  deployment time and only once.
+
++ Web Container(WC):
+	- Servlets do not have main() method. They are under the control 		  of another java application called a container.
+	- It is a component of web server that interacts with servlets.
+	- It is runtime environment, which is responsible for managing 		  execution of dynamic components such as servlet, jsp, filter etc.
+	- In other words It is server side JRE.
+	- Tomcat is a web container.
+	- Following are the jobs of Web Container
+		1. To create, HttpRequest and HttpResponse objects
+		2. Mapping URL to a particular servlet and ensuring that 			   the URL requester has the correct access-rights. 
+		3. To manage the life cycle of Servlet, JSP and Filter.
+		4. To manage threads for every client request.
+		5. To manage session.
+		6. To support database connection pooling.
+
++ Servlet Names:
+	- A servlet can have three names.
+		1. Public URL name - The name client knows.
+		2. Deployment/internal secret name.
+		3. File path name - F.Q. Class Name.
+	- For the purpose of flexibility and improving security, we assign 		  3 names to servlet.
+	- To configure servlet,either we can use Deployment Descriptor(DD) 		  or WebServlet annotation.
+	- Using DD to map URLs to servlet:
+	  -------------------------------	
+		* The two DD elements for URL mapping
+			1. <servlet> 
+				- map internal name to F.Q. Class Name
+			2. <servlet-mapping>
+				 - map internal name to URL name
+	- Consider the following code snippet:
+	<web-app ... >
+		<servlet>
+			<servlet-name>HelloServlet</servlet-name>
+			<servlet-class>pages.HelloServlet</servlet-class>
+		</servlet>
+		<servlet-mapping>
+			<servlet-name>HelloServlet</servlet-name>
+			<url-pattern>/hello</url-pattern>
+		</servlet-mapping>
+	</web-app>
+
+	- In above code:
+		1. /hello : is URL name. It is also called URL pattern.
+		2. HelloServlet : is deployment name. It can be any name.
+		3. pages.HelloServlet : is F.Q class name.
+	
+	- Single servlet may have multiple URL patterns but it must have 		  at least one URL pattern.
+		<servlet-mapping>
+			<servlet-name>HelloServlet</servlet-name>
+			<url-pattern>/hello1</url-pattern>
+			<url-pattern>/hello2</url-pattern>
+		</servlet-mapping>
+	- If we try to deploy and execute servlet without url pattern then 		  we will get "HTTP Status 404" error.
+	- We can not use same url pattern for multiple servlets. In this 	   case WC throws java.lang.IllegalArgumentException. 
+	- Using annotation to map URLs to servlet:
+	  ---------------------------------------
+		* WebServlet is declared in javax.servlet.annotation pkg.
+		* It is used to declare a servlet.
+		* This annotation is processed by the container at 			  deployment time, and the corresponding servlet made 			  available at the specified URL patterns.
+		* Consider the following code snippet.
+			@WebServlet("/hello")
+			public class TestServlet extends HttpServlet
+			{	}
+		* Using urlPatterns attribute, we can specify multiple url 			  patterns for the servlet.
+			@WebServlet(urlPatterns={"/h1","/h2"})	
+			public class TestServlet extends HttpServlet
+			{	}
+
++ How WC handles a request?
+	- User clicks a link that has a URL to a servlet instead of a 		  static page.
+	- The container "sees" that the request is for a servlet, so the 		  container creates two objects:
+		1. HttpServletRequest
+		2. HttpServletResponse
+	- The container finds the correct servlet based on URL in the 		  request, allocates thread for a request and passes the request 		  and response objects to the servlet thread.	
+	- The container calls "service()" method. Depending on type of 		  request, the service method calls either the doGet() or doPost 		  method.
+	- The doGet/doPost method generates the dynamic page and stuffs 	  the page into response object.
+	- The thread completes, the container response object into an Http 		  response, sends it back to the client, then deletes request and 		  response objects.
+
++ SingleThreadModel:
+	- It is marker or tagging interface declared in javax.servlet 		  package.	
+	- If a servlet implements this interface then it is guaranteed 		  that no two threads will execute concurrently in the servlet's 		  service method.
+	- It is Deprecated interface.
+
++ HttpServletRequest:
+	- It is subinterface of ServletRequest interface.
+	- It is used to provide request information to the Http Servlets.
+	- The servlet container creates an HttpServletRequest object and 		  passes it as an argument to the servlet's service methods 		  (doGet, doPost, etc).
+	- Methods of ServletRequest interface:
+		1. String getParameter(String name)
+		2. Enumeration<String> getParameterNames()
+		3. String[] getParameterValues(String name)
+		4. Object getAttribute(String name)
+		5. void setAttribute(String name, Object o) 
+		6. void removeAttribute(String name)
+		7. RequestDispatcher getRequestDispatcher(String path)
+	- Methods of HttpServletRequest interface:
+		1. Cookie[] getCookies()
+		2. HttpSession getSession()
+		3. HttpSession getSession(boolean create)
+
++ HttpServletResponse:
+	- It is sub interface of ServletResponse interface.
+	- It is used  to provide HTTP-specific functionality in sending a 		  response.
+	- The servlet container creates an HttpServletResponse object and 		  passes it as an argument to the servlet's service methods 		  (doGet, doPost, etc).
+	- Methods of ServletResponse:
+		1. void flushBuffer()throws IOException
+		2. PrintWriter getWriter()throws IOException
+		3. void setContentType(String type)
+		4. int getBufferSize()
+		5. void setBufferSize(int size)
+	- Methods of HttpServletResponse:
+		1. void addCookie(Cookie cookie)
+		2. String encodeURL(String url)
+		3. String encodeRedirectURL(String url)
+		4. void sendRedirect(String location)throws IOException
+
++ PrintWriter:
+	- It is a sub class of Writer class declared in java.io package.
+	- It prints formatted representations of objects to a text-output 		  stream.
+	- Methods in this class never throw I/O exceptions.
+	- In context of servlet, use PrintWriter object to write HTML text 		  to the response object. 
+	- Some of the methods are:
+		1. public void print(String x)
+		2. public void println(String x)
+		3. public PrintWriter printf(String format,Object... args)
+
+
++ Login and Validation example:
+	- we will create two files:
+		1. Login.html
+		2. LoginServlet( url pattern-> /login )
+	- Let us define Login.html page under WebContent in eclipse.
+
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="UTF-8">
+			<title>Login Page</title>
+		</head>
+		<body>
+			<form action="login" method="post">
+				<input type="text" name="txtUserName"/>
+				<input type="password" name="txtPassword"/>
+				<input type="submit" value="Login"/>
+			</form>
+		</body>
+	</html>
+
+	- Points to remember:
+		1. When we are using URL in HTML, If the location is 			   relative without a leading '/' the container interprets 			   it as relative to the current request URI.
+		   e.g	<form action="login" method="post">
+		   url generated : http://localhost:8080/TestWebApp/login
+
+		2. When we are using URL in HTML, If the location is 			   relative with a leading '/' the container interprets it 			   as relative to the servlet container root.
+		   e.g	<form action="/login" method="post">
+		   url generated : http://localhost:8080/login
+
+		3. When we are using URL in HTML, If the location is 			   relative with two leading '/' the container interprets 			   it as a network-path reference
+		   e.g	<form action="/login" method="post">
+		   url generated : http://login/
+	- For now, to validate username and password we will use HashMap. 		  We will instantiate it in Servlet costructor and use it in 		  doPost( )  method. What we will write in ctor?
+		
+		private Map<String, String> map;
+		public LoginServlet() {
+			map = new HashMap<>();
+			map.put("sandeep", "sandeep");
+			map.put("prathamesh", "prathamesh");
+			map.put("soham", "soham");
+		}
+	- Let us define doPost method in LoginServlet class.
+		protected void doPost(HttpServletRequest req, 			HttpServletResponse resp) throws IOException  
+		{		
+			
+			String userName = req.getParameter("txtUserName");
+			String password = req.getParameter("txtPassword");
+			boolean loginStatus = false;
+			if( map.containsKey(userName))
+			{
+				if( password.equals(map.get(userName)))
+					loginStatus = true;
+			}
+			resp.setContentType("text/html");
+			try( PrintWriter out = resp.getWriter( ) )
+			{
+				out.println("<html>");
+				out.println("<body>");
+				if( loginStatus)
+					out.println("successful");
+				else
+					out.println("unsuccessful");
+				out.println("</body>");
+				out.println("</html>");
+			}
+		}
+
++ Servlet life cycle methods:
+	1. init():
+		- The servlet container calls the "init(coinfig)" or 
+		  "init()" method exactly once after instantiating( after 			  ctor call ) the servlet.
+		- The init method must complete successfully before the 		  servlet can receive any requests. 
+		- The servlet container cannot place the servlet into 			  service if the init method 
+			* Throws a ServletException
+			* Does not return within a time period defined by 				  the Web server 
+		- If we want to do any one time initialization job for 			  sevlet then we should use this method.
+	2. service():
+		- Called by the servlet container to allow the servlet to 			  respond to a request. 
+		- This method is only called after the servlet's init() 		  method has completed successfully. 
+		- WC/SC calls "service(req,resp)" method per client 			  request.
+	3. destroy():
+		- Called by the servlet container to indicate to a servlet 			  that the servlet is being taken out of service.
+		- This method is only called once.
+		- After the servlet container calls this method, it will 			  not call the service method again on this servlet. 
+		- This method gives the servlet an opportunity to clean up 			  any resources that are being held (for example, memory, 			  file handles, threads). 
+
++ load-on-startup element:
+	- Servlet is always located, loaded, instantiated and initialized 		  before it can service its first client request.It may suffer 		  first request.
+	- The load-on-startup element indicates that this servlet 
+ 	  should be loaded (instantiated and have its init() called) 
+	  on the startup of the web application.
+	- Syntax:
+		<servlet>
+			<servlet-name>...</servlet-name>
+			<servlet-class>...</servlet-class>
+			<load-on-startup>int_value</load-on-startup>
+		</servlet>
+	- int_value :
+		* Indicating the order in which the servlet should be 			  loaded.
+		* If the value is a negative integer, or the element is 		  not present, the container is free to load the servlet 			  whenever it chooses. 
+		* If the value is a positive integer or 0, the container 			  must load and initialize the servlet as the application 			  is deployed.
+
++ Servlet-JDBC integration:
+	- Let us design simple jdbc based servlet web application which 	  will allow us to register and login into a system.
+		* UserTable
+			1. username : varchar( 50 )
+			2. password : varchar( 50 )
+			3. //TODO : you decide
+		* DBUtils.java:
+			1. Load and register driver
+			2. Get the connection
+		* User.java:
+			1. POJO class to store user records
+		* UserDao.java:
+			1. Dao class to perform CRUD operations
+		* RegistrationServlet.java
+			1. Servlet to register new user.
+			2. url-pattern is /register
+			3. Use servlet life cycle methods to manage DAO.
+		* LoginServlet.java
+			1. Servlet to validate user.
+			2. url-pattern is /login
+			3. Use servlet life cycle methods to manage DAO.
+		* Index.html:
+			1. Home page having two links: New User and Login.
+		* NewUser.html:
+			1. Accept user information and submit it to 				   RegistrationServlet.
+			2. After successful registration navigate user to 				   Login.html page. In case of failure, take user 				   to Index.html page.
+			3. <form action="register" method="post">
+		* Login.html:
+			1. Accept user credentials and submit it to 				   LoginServlet.
+			2. After successful login print user details & 				   ask user to click on logout and navigate it to 				   Login.html page. In case of failure, take user 				   to Index.html page.
+			3. <form action="login" method="post">
+
++ Servlet's Initialization Parameter:
+	- We can specify servlets initialization parameter using DD or 		  annotation.
+	- Let us see how to do it using DD.
+	<servlet>
+		<init-param>
+			<param-name>USER</param-name>
+			<param-value>sandeepkulange</param-value>
+		</init-param>		
+	</servlet>
+
+	- Using @WebInitParam annotation
+	@WebServlet(urlPatterns="/login",
+		initParams={@WebInitParam(name="USER",value="sandeep")})
+	public class LoginServlet extends HttpServlet
+	{	}
+	
++ ServletConfig:
+	- We can't use servlets init parameters until the servlet is 
+	initialized.
+	- When the container initializes a servlet, it makes a unique
+	ServletConfig object for the servlet.
+	- The container "reads" the servlet init parameters from the DD
+	and gives them to the ServletConfig, then passes ServletConfig 		  to the servlets init() method.	
+	- It contains servlet's configuration and initialization
+	parameters
+	- WC/SC creates ServletConfig per servlet(Singlton).
+	- Using ServletConfig object, we can only read the 
+	init-parameters so it is inherently thread safe. 
+	In other words, ServletConfig instance is singleton and thread
+	safe.
+	- WC injects ServletConfig instance inside init( ) hence 
+	there is no need to use any method to get reference of 
+	ServletConfig. 
+	But in other methods we need to use "getServletConfig()" method.
+		ServletConfig config =  this.getServletConfig();
+	- User getInitParameter() to read init-param:
+		String name = config.getInitParameter("User");	
+	- Note: WC injects ServletConfig instance inside "init()" 
+	method and "init()" gets called after constructor hence 
+	ServletConfig is not available inside ctor.
+	- Inside ctor, "getServletConfig()" method will return null.
+
++ Web Application/Context Initialization Parameter:
+	- We can specify context initialization parameter using DD.
+	- Let us see how to do it using DD.
+		<web-app ...>
+			<context-param>
+				<param-name>USER</param-name>
+				<param-value>sandeep</param-value>
+			</context-param>
+		</web-app>
+
+
++ ServletContext:
+	- At the time of deployement, Web Container creates ServletContext 		  instance per web application.
+	- If we want to read context initialization parameter then we 		  should use this instance.
+	- The Servlet context provides methods for accessing
+		* Initialization parameters
+		* Resources associated with the web context
+		* Object-valued attributes
+		* Logging capabilities
+	- It is singleton and thread safe instance.
+	- Using "getServletContext()" method, we can get the reference of 		  ServletContext instance.
+		ServletContext context = this.getServletContext();
+	- Methods declared in javax.servlet.ServletContext interface:
+		1. Object getAttribute(String name)
+		2. void setAttribute(String name, Object object)
+		3. void removeAttribute(String name)
+		4. String getInitParameter(String name)
+		5. Enumeration<String> getInitParameterNames()
+		6. boolean setInitParameter(String name, String value)
+		7. RequestDispatcher getRequestDispatcher(String path)
+	- How to access context initialization parameter?
+		String name = context.getInitParameter("USER");
+	- Java instance which is in scope( request/session/application) is 		  called attribute. Let us see how to add Date instance in diff 	  scope.
+		request.setAttribute("joinDate", new Date( ) );
+		session.setAttribute("joinDate", new Date( ) );
+		context.setAttribute("joinDate", new Date( ) );
+	
++ Difference between parameter and attribute?
+	1. A parameter is key/value pair instance in which type of key and 		   value is String.
+	   An attribute is key/value pair instance in which type of key is 		   String and type of value is object.
+
+	2. Parameters come from HTML code i.e client. 
+	   Attributes come from Servlet/JSP i.e set by the server.
+
+	3. Parameters are immutable i.e we can not modify the state.
+	   Attributes are mutable i.e we can modify the state.
+
+	4. To get the parameter we can use "getParameter()" method.
+	   To get the attribute we can use "getAttribute()" method.
